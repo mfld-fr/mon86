@@ -1,0 +1,11 @@
+/cross
+
+*.s
+*.o
+*.map
+
+mon86-host
+mon86-stub
+mon86.bin
+
+test-mon86-out.txt

@@ -239,47 +239,47 @@ err_t recv_context (context_t * context)
 				break;
 				}
 
-			switch (c)
-				{
+			// GCC stores switch offsets in .rodata section
+			// so use 'if' statements in place of 'switch'
+			// because MON86 has no data segment but just stack
+
+			if (c == C_OFFSET) {
+
 				// Set offset
 
-				case C_OFFSET:
-					if (context->length != 1)
-						{
-						err = E_LENGTH;
-						break;
-						}
-
-					context->offset = context->value;
-					context->done = 1;
+				if (context->length != 1) {
+					err = E_LENGTH;
 					break;
+					}
+
+				context->offset = context->value;
+				context->done = 1;
+				}
+
+			else if (c == C_SEGMENT) {
 
 				// Set segment
 
-				case C_SEGMENT:
-					if (context->length != 1)
-						{
-						err = E_LENGTH;
-						break;
-						}
-
-					context->segment = context->value;
-					context->done = 1;
+				if (context->length != 1) {
+					err = E_LENGTH;
 					break;
+					}
+
+				context->segment = context->value;
+				context->done = 1;
+				}
+
+			else if (c == C_LENGTH) {
 
 				// Set length
 
-				case C_LENGTH:
-					if (context->length != 1)
-						{
-						err = E_LENGTH;
-						break;
-						}
-
-					context->count = context->value;
-					context->done = 1;
+				if (context->length != 1) {
+					err = E_LENGTH;
 					break;
+					}
 
+				context->count = context->value;
+				context->done = 1;
 				}
 			}
 

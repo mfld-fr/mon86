@@ -7,6 +7,7 @@
 
 #ifdef HOST_STUB
 #include <stdio.h>
+#include <unistd.h>
 #endif
 
 
@@ -296,92 +297,78 @@ void main ()
 		err = recv_context (&context);
 		if (err == E_OK && context.length && ! context.done)
 			{
-			switch (context.token [0])
-				{
-				// Read from memory
+			// GCC stores switch offsets in .rodata section
+			// so use 'if' statements in place of 'switch'
+			// because MON86 has no data segment but just stack
 
-				case C_MEM_READ:
-					if (context.length != 1)
-						{
-						err = E_LENGTH;
-						break;
-						}
+			// Read from memory
 
+			if (context.token [0] == C_MEM_READ) {
+				if (context.length != 1) {
+					err = E_LENGTH;
+					} else {
 					mem_read (&context);
 					send_word (context.value);
-
 					context.done = 1;
-					break;
+					}
+				}
 
-				// Write to memory
+			// Write to memory
 
-				case C_MEM_WRITE:
-					if (context.length != 1)
-						{
-						err = E_LENGTH;
-						break;
-						}
-
+			else if (context.token [0] == C_MEM_WRITE) {
+				if (context.length != 1) {
+					err = E_LENGTH;
+					} else {
 					mem_write (&context);
 					context.done = 1;
-					break;
+					}
+				}
 
-				// Read register
+			// Read register
 
-				case C_REG_READ:
-					if (context.length != 2)
-						{
-						err = E_LENGTH;
-						break;
-						}
-
+			else if (context.token [0] == C_REG_READ) {
+				if (context.length != 2) {
+					err = E_LENGTH;
+					} else {
 					err = reg_read (&context, &regs);
-					if (err) break;
-
-					send_word (context.value);
-
-					context.done = 1;
-					break;
-
-				// Write register
-
-				case C_REG_WRITE:
-					if (context.length != 2)
-						{
-						err = E_LENGTH;
-						break;
+					if (!err) {
+						send_word (context.value);
+						context.done = 1;
 						}
+					}
+				}
 
+			// Write register
+
+			else if (context.token [0] == C_REG_WRITE) {
+				if (context.length != 2) {
+					err = E_LENGTH;
+					} else {
 					err = reg_write (&context, &regs);
 					context.done = 1;
-					break;
+					}
+				}
 
-				// Call procedure
+			// Call procedure
 
-				case C_PROC:
-					if (context.length != 1)
-						{
+			else if (context.token [0] == C_PROC) {
+					if (context.length != 1) {
 						err = E_LENGTH;
-						break;
+						} else {
+						proc_call (&context, &regs);
+						context.done = 1;
 						}
-
-					proc_call (&context, &regs);
-					context.done = 1;
-					break;
+					}
 
 				// Execute task
 
-				case C_TASK:
-					if (context.length != 1)
-						{
+			else if (context.token [0] == C_TASK) {
+					if (context.length != 1) {
 						err = E_LENGTH;
-						break;
+						} else {
+						err = task_sub (&globals, &regs);
+						context.done = 1;
 						}
-
-					err = task_sub (&globals, &regs);
-					context.done = 1;
-					break;
-
 				}
 			}
 
