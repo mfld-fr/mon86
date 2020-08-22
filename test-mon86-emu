@@ -2,7 +2,7 @@
 
 # Start to execute MON86 @ F000h:0
 
-emu86 -w 0xf0000 -f ../mon86/mon86.bin -x 0xf000:0x0 &
+emu86 -w 0xf0000 -f ./target/mon86.bin -x 0xf000:0x0 &
 
 # Give enough time to emulator to open PTY
 

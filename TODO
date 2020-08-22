@@ -1,8 +1,6 @@
-- Complete rewrite *.S from AS86 to AS-IA16
 - Simplify 'slave_ret' stuff
 - 'slave_exit' to 'slave_ret'
 - Move host part to /host
-- Move target part to /target
 - Makefile for /target
 - Simplify interrupt entry with CALL int_hand followed with int_num
 
