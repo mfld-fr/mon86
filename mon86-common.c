@@ -185,6 +185,7 @@ err_t recv_word (word_t * val)
 	return err;
 	}
 
+#ifdef MON86_HOST
 
 err_t recv_status ()
 	{
@@ -217,6 +218,7 @@ err_t recv_status ()
 	return err;
 	}
 
+#endif // MON86_HOST
 
 err_t recv_context (context_t * context)
 	{

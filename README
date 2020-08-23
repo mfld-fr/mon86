@@ -114,27 +114,23 @@ give control back to the master through a simple RETF / IRET.
 Stack before SS:SP switch:
 
   Offset  Register or value
-  00      AX
-  02      CX
-  04      DX
-  06      BX
-  08      SP (dummy)
-  0A      BP
-  0C      SI
-  0E      DI
-  10      ES
-  12      CS (dummy)
-  14      SS (dummy)
-  16      DS
-  18      IP (dummy)
-  1A      FL (dummy)
-  1C      interrupt number
-  1E      IP slave
-  20      CS slave
-  22      FL slave
-  24      IP master
-  26      CS master
-  28      FL master
+  00h     AX
+  02h     CX
+  04h     DX
+  06h     BX
+  08h     SP (dummy)
+  0Ah     BP
+  0Ch     SI
+  0Eh     DI
+  10h     ES
+  12h     DS
+  14h     pointer to interrupt number
+  16h     IP slave
+  18h     CS slave
+  1Ah     FL slave
+  1Ch     IP master
+  1Eh     CS master
+  20h     FL master
 
 Remaining of the context data is stored in a static structure pointed by the
 vector [0:3FCh] (INT FFh):

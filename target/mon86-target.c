@@ -1,6 +1,9 @@
-// MON86 - Main program
+//------------------------------------------------------------------------------
+// MON86 - Target program
+//------------------------------------------------------------------------------
 
 #include "../mon86-common.h"
+#include "mon86-target.h"
 
 
 // Host stubbing
@@ -115,9 +118,9 @@ static void proc_call (context_t * context, regs_t * regs)
 	}
 
 
-static word_t task_exec (globals_t * globals, regs_t * regs, word_t start)
+static word_t task_exec (globals_t * globals, regs_t * regs)
 	{
-	return 255;
+	return vect_global;
 	}
 
 
@@ -142,7 +145,7 @@ extern void mem_read  (context_t * context);
 
 extern void proc_call (context_t * context, regs_t * regs);
 
-extern word_t task_exec (globals_t * globals, regs_t * regs, byte_t start);
+extern word_t task_exec (globals_t * globals, regs_t * regs);
 
 extern void int_setup (globals_t * globals);
 extern void reg_setup (regs_t * regs);
@@ -206,36 +209,19 @@ static err_t task_sub (globals_t * globals, regs_t * regs)
 	{
 	err_t err;
 
-	word_t ret;
-
-	// Add return frame if never executed
-	// or previously returned (restart)
-
-	if (globals->slave_ret)
-		{
-		globals->slave_ret = 0;
-
-		ret = 1;
-		}
-	else
-		{
-		ret = 0;
-		}
-
-	ret = task_exec (globals, regs, ret);
+	word_t ret = task_exec (globals, regs);
 
 	switch (ret)
 		{
-		case 1:
+		case vect_trace:
 			err = E_TRACE;
 			break;
 
-		case 3:
+		case vect_break:
 			err = E_BREAK;
 			break;
 
-		case 255:
-			globals->slave_ret = 1;
+		case vect_global:
 			err = E_EXIT;
 			break;
 
@@ -275,8 +261,8 @@ int main ()
 	// to return immediately upon INT FFh
 
 	globals.glob_magic = 0xCF90;
-	globals.slave_ret = 1;
-	globals.slave_run = 0;
+	globals.slave_run  = 0;
+	globals.slave_ret  = 1;
 
 	int_setup (&globals);
 

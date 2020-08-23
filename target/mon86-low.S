@@ -2,11 +2,7 @@
 // MON86 - Low level routines
 //------------------------------------------------------------------------------
 
-// Interrupt vectors
-
-#define vect_trace   0x01
-#define vect_break   0x03
-#define vect_global  0xFF
+#include "mon86-target.h"
 
 // Offsets in globals structure
 // Synchronize with mon86-target
@@ -21,12 +17,27 @@
 
 // Offsets in stack frame
 
-#define iret_size  0x6
+#define iret_size    0x6
 
-// Offsets in registers
+#define stack_ax     2*0x0
+#define stack_cx     2*0x1
+#define stack_dx     2*0x2
+#define stack_bx     2*0x3
+#define stack_sp     2*0x4
+#define stack_bp     2*0x5
+#define stack_si     2*0x6
+#define stack_di     2*0x7
+#define stack_es     2*0x8
+#define stack_ds     2*0x9
+#define stack_num    2*0xA
+#define stack_ip     2*0xB
+#define stack_cs     2*0xC
+#define stack_fl     2*0xD
 
-#define reg_max    0xE
-#define regs_size  2*reg_max
+#define stack_size   2*0xE
+
+// Offsets in registers structure
+// Synchronize with mon86-target
 
 #define reg_ax     2*0x0
 #define reg_cx     2*0x1
@@ -42,6 +53,9 @@
 #define reg_ds     2*0xB
 #define reg_ip     2*0xC
 #define reg_fl     2*0xD
+
+#define reg_max    0xE
+#define regs_size  2*reg_max
 
 // Offsets in context stucture
 // Synchronize with mon86-common
@@ -70,14 +84,14 @@ entry:
 
 entry_1:
 
-    // Compute offset & segment displacement
+	// Compute offset & segment displacement
 
 	pop   %ax
 	sub   $entry_1,%ax
 	mov   $4,%cl
 	shr   %cl,%ax
 
-    // Realign segment and offset
+	// Realign segment and offset
 
 	mov   %cs,%cx
 	add   %cx,%ax
@@ -90,7 +104,7 @@ entry_2:
 
 	// Small memory model (DS=ES=SS)
 	// and no data segment used here
-    // so stay on the stack segment
+	// so stay on the stack segment
 
 	mov    %ss,%ax
 	mov    %ax,%ds
@@ -349,9 +363,7 @@ int_hand:
 
 	// Save registers on stack
 
-	sub    $4,%sp  // skip IP FL
 	push   %ds
-	sub    $4,%sp  // skip CS SS
 	push   %es
 	push   %di
 	push   %si
@@ -385,13 +397,12 @@ int_hand:
 
 master_stack:
 
-	mov    $0,%al
-	mov    %al,slave_run(%bx)
+	movb   $0,slave_run(%bx)
 
 	mov    %sp,slave_sp(%bx)
 	mov    %ss,slave_ss(%bx)
 
-	// Note: no use of the automatic CLI
+	// Note: no use of automatic CLI
 
 	cli
 	mov    master_sp(%bx),%sp
@@ -405,13 +416,12 @@ master_stack:
 
 slave_stack:
 
-	mov    $1,%al
-	mov    %al,slave_run(%bx)
+	movb   $1,slave_run(%bx)
 
 	mov    %sp,master_sp(%bx)
 	mov    %ss,master_ss(%bx)
 
-	// Note: no use of the automatic CLI
+	// Note: no use of automatic CLI
 
 	cli
 	mov    slave_sp(%bx),%sp
@@ -435,9 +445,8 @@ int_ret:
 	pop    %si
 	pop    %di
 	pop    %es
-	add    $4,%sp  // skip CS SS
 	pop    %ds
-	add    $6,%sp  // skip IP FL int_num
+	add    $2,%sp  // skip int_num *
 	iret
 
 //------------------------------------------------------------------------------
@@ -451,7 +460,6 @@ task_stub:
 // Execute slave task
 // arg1 : globals *
 // arg2 : regs *
-// arg3 : "IRET to master" flag
 
 	.global task_exec
 
@@ -465,69 +473,71 @@ task_exec:
 	push   %si
 	push   %di
 
-	mov    4(%bp),%bx  // arg1 = globals *
-	mov    6(%bp),%si  // arg2 = regs *
-
 	// Allocate space for slave frame
 
+	mov    6(%bp),%si  // arg2 = regs *
 	mov    reg_sp(%si),%di
-	sub    $regs_size+2+iret_size,%di
 	mov    reg_ss(%si),%dx
+	sub    $stack_size,%di
 
 	// Option for slave exit frame
 
-	mov    8(%bp),%ax  // arg3 = flag
-	test   %ax,%ax
+	mov    4(%bp),%bx  // arg1 = globals *
+
+	testb  $1,slave_ret(%bx)
 	jz     task_exec_1
 	sub    $iret_size,%di
 
-	push   %ds
-	mov    %dx,%ds
-
-	mov    $slave_exit,%ax
-	mov    %ax,regs_size+2+iret_size+0(%di)
-	mov    %cs,regs_size+2+iret_size+2(%di)
-	pushf
-	pop    %ax
-	mov    %ax,regs_size+2+iret_size+4(%di)
-
-	pop    %ds
-
 task_exec_1:
 
-	// Copy struct regs to slave frame
+	// Copy structure regs to slave frame
 
-	push   %di
 	push   %es
 	mov    %dx,%es
+	push   %di
 
-	mov    $reg_max,%cx
-	cld
+	// One by one to allow different offsets
+	// Order of the stack frame
+
+	push   %si
+	mov    $8,%cx
 	rep
 	movsw
+	pop    %si
 
-	pop    %es
+	mov    reg_es(%si),%ax
+	stosw
+	mov    reg_ds(%si),%ax
+	stosw
+
+	add    $2,%di  // skip int_num *
+
+	mov    reg_ip(%si),%ax
+	stosw
+	mov    reg_cs(%si),%ax
+	stosw
+	mov    reg_fl(%si),%ax
+	stosw
+
+	// Option for slave exit frame
+
+	testb  $1,slave_ret(%bx)
+	jz     task_exec_2
+
+	mov    $slave_exit,%ax
+	stosw
+	mov    %cs,%ax
+	stosw
+	pushf
+	pop    %ax
+	stosw
+
+	movb   $0,slave_ret(%bx)
+
+task_exec_2:
+
 	pop    %di
-
-	// Expand the slave frame
-	// Group IP CS FL to slave IRET
-
-	push   %ds
-	mov    %dx,%ds
-
-	xor    %ax,%ax
-	mov    %ax,regs_size+0(%di)
-
-	mov    reg_ip(%di),%ax
-	mov    %ax,regs_size+2+0(%di)
-
-	mov    reg_cs(%di),%ax
-	mov    %ax,regs_size+2+2(%di)
-
-	mov    reg_fl(%di),%ax
-	mov    %ax,regs_size+2+4(%di)
-
-	pop    %ds
+	pop    %es
 
 	// Update globals from regs
 
@@ -543,9 +553,8 @@ task_exec_1:
 
 	// Push the master frame
 
-	sub    $6,%sp  // skip int_num IP FL
+	sub    $2,%sp  // skip int_num *
 	push   %ds
-	sub    $4,%sp  // skip CS SS
 	push   %es
 	push   %di
 	push   %si
@@ -565,50 +574,63 @@ task_exec_1:
 
 master_back:
 
-	mov    6(%bp),%di  // arg2 = regs *
+	mov    %si,%di  // regs *
 
 	mov    slave_sp(%bx),%si  // BX = globals *
 	mov    slave_ss(%bx),%dx
 
-	// Compress the slave frame
-	// Ungroup IP CS FL from slave IRET
+	// Copy slave frame to structure regs
 
 	push   %ds
 	mov    %dx,%ds
+	push   %di
 
-	mov    regs_size+2+4(%si),%ax
-	mov    %ax,reg_fl(%si)
+	// One by one to allow different offsets
+	// Order of the registers structure
 
-	mov    regs_size+2+2(%si),%ax
-	mov    %ax,reg_cs(%si)
+	push   %si
+	mov    $8,%cx
+	rep
+	movsw
+	pop    %si
 
-	mov    regs_size+2+0(%si),%ax
-	mov    %ax,reg_ip(%si)
+	mov    stack_es(%si),%ax
+	stosw
+	mov    stack_cs(%si),%ax
+	stosw
+	add    $2,%di  // skip SS
+	mov    stack_ds(%si),%ax
+	stosw
+
+	mov    stack_ip(%si),%ax
+	stosw
+	mov    stack_fl(%si),%ax
+	stosw
 
 	// Will return the interrupt number to caller
 
-	mov    regs_size+0(%si),%bx  // int_num *
+	push   %bx
+	mov    stack_num(%si),%bx  // int_num *
 	mov    %cs:(%bx),%ax
+	pop    %bx
 
-	// Copy slave frame to regs
-
-	push   %si
-
-	mov    $reg_max,%cx
-	cld
-	rep
-	movsw
-
-	pop    %si
+	pop    %di
 	pop    %ds
 
-	add    $regs_size+2+iret_size,%si  // release slave frame
+	add    $stack_size,%si  // release slave frame
 
-	mov    6(%bp),%di  // arg2 = regs *
 	mov    %si,reg_sp(%di)
 	mov    %dx,reg_ss(%di)
 
-// Back to caller
+	// Rearm slave exit frame option
+
+	cmp    $0xFF,%al
+	jne    task_exec_3
+	movb   $1,slave_ret(%bx)
+
+task_exec_3:
+
+	// Back to caller
 
 	pop    %di
 	pop    %si
