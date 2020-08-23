@@ -10,3 +10,6 @@
 #define vect_break   0x03
 #define vect_global  0xFF
 
+// Optimizations
+
+#define MON86_186

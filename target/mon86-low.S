@@ -365,14 +365,19 @@ int_hand:
 
 	push   %ds
 	push   %es
-	push   %di
-	push   %si
-	push   %bp
-	sub    $2,%sp  // skip SP
-	push   %bx
-	push   %dx
-	push   %cx
+
+#ifdef MON86_186
+	pusha
+#else
 	push   %ax
+	push   %cx
+	push   %dx
+	push   %bx
+	sub    $2,%sp  // skip SP
+	push   %bp
+	push   %si
+	push   %di
+#endif
 
 	// Retrieve globals * to DS:BX
 	// From fixed & safe location
@@ -436,17 +441,24 @@ int_ret:
 
 	// Restore registers from stack
 
-	pop    %ax
-	pop    %cx
-	pop    %dx
-	pop    %bx
-	add    $2,%sp  // skip SP
-	pop    %bp
-	pop    %si
+#ifdef MON86_186
+	popa
+#else
 	pop    %di
+	pop    %si
+	pop    %bp
+	add    $2,%sp  // skip SP
+	pop    %bx
+	pop    %dx
+	pop    %cx
+	pop    %ax
+#endif
+
 	pop    %es
 	pop    %ds
+
 	add    $2,%sp  // skip int_num *
+
 	iret
 
 //------------------------------------------------------------------------------
@@ -485,24 +497,27 @@ task_exec:
 	mov    4(%bp),%bx  // arg1 = globals *
 
 	testb  $1,slave_ret(%bx)
-	jz     task_exec_1
+	jz     1f
 	sub    $iret_size,%di
-
-task_exec_1:
 
 	// Copy structure regs to slave frame
 
-	push   %es
+1:	push   %es
 	mov    %dx,%es
 	push   %di
 
 	// One by one to allow different offsets
 	// Order of the stack frame
+	// First registers in PUSHA / POPA order
 
 	push   %si
+	add    $14,%si
 	mov    $8,%cx
-	rep
-	movsw
+1:	std
+	lodsw
+	cld
+	stosw
+	loop   1b
 	pop    %si
 
 	mov    reg_es(%si),%ax
@@ -522,7 +537,7 @@ task_exec_1:
 	// Option for slave exit frame
 
 	testb  $1,slave_ret(%bx)
-	jz     task_exec_2
+	jz     1f
 
 	mov    $slave_exit,%ax
 	stosw
@@ -534,9 +549,7 @@ task_exec_1:
 
 	movb   $0,slave_ret(%bx)
 
-task_exec_2:
-
-	pop    %di
+1:	pop    %di
 	pop    %es
 
 	// Update globals from regs
@@ -554,16 +567,22 @@ task_exec_2:
 	// Push the master frame
 
 	sub    $2,%sp  // skip int_num *
+
 	push   %ds
 	push   %es
-	push   %di
-	push   %si
-	push   %bp
-	sub    $2,%sp  // skip SP
-	push   %bx
-	push   %dx
-	push   %cx
+
+#ifdef MON86_186
+	pusha
+#else
 	push   %ax
+	push   %cx
+	push   %dx
+	push   %bx
+	sub    $2,%sp  // skip SP
+	push   %bp
+	push   %si
+	push   %di
+#endif
 
 	// Switch to slave
 
@@ -587,11 +606,16 @@ master_back:
 
 	// One by one to allow different offsets
 	// Order of the registers structure
+	// First registers in PUSHA / POPA order
 
 	push   %si
+	add    $14,%si
 	mov    $8,%cx
-	rep
-	movsw
+1:	std
+	lodsw
+	cld
+	stosw
+	loop 1b
 	pop    %si
 
 	mov    stack_es(%si),%ax
@@ -625,14 +649,12 @@ master_back:
 	// Rearm slave exit frame option
 
 	cmp    $0xFF,%al
-	jne    task_exec_3
+	jne    1f
 	movb   $1,slave_ret(%bx)
-
-task_exec_3:
 
 	// Back to caller
 
-	pop    %di
+1:	pop    %di
 	pop    %si
 	pop    %dx
 	pop    %cx
@@ -656,7 +678,7 @@ int_setup:
 	mov    4(%bp),%dx  // arg1 = globals *
 
 	push   %ds
-	mov    $0,%ax
+	xor    %ax,%ax
 	mov    %ax,%ds
 
 	mov    $vect_trace*4,%bx  // trace interrupt vector
