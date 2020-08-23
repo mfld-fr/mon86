@@ -301,79 +301,51 @@ proc_pop:
 //------------------------------------------------------------------------------
 
 // INT 01h - Trace
-// Much code in 8086 to perform 80186 push immediate
 
 int_trace:
 
-	sti
-	sub    $2,%sp  // space for int_num
-
-	push   %bp
-	mov    %sp,%bp
-	push   %ax
-
-	mov    $vect_trace,%ax
-	mov    %ax,2(%bp)  // BP+2 = int_num
-
-	pop    %ax
-	pop    %bp
-
-	jmp    int_hand
-
+	call   int_hand
+	.word  vect_trace
 
 // INT 03h - Break
-// Much code in 8086 to perform 80186 push immediate
 
 int_break:
 
-	sti
-	sub    $2,%sp  // space for int_num
-
-	push   %bp
-	mov    %sp,%bp
-	push   %ax
-
-	mov    $vect_break,%ax
-	mov    %ax,2(%bp)  // BP+2 = int_num
-
-	pop    %ax
-	pop    %bp
-
-	jmp    int_hand
-
+	call   int_hand
+	.word  vect_break
 
 // Slave exit on IRET
-// Push CS-IP-FL of task stub to simulate INT FFh interrupt
+// Push IRET frame to simulate INT FFh interrupt
 // To reuse context switch of real interrupt
 
 slave_exit:
 
-	sti
-	sub    $2+iret_size,%sp  // space for int_num and CS-IP-FL
+	sub    iret_size,%sp  // space for IRET frame
 
 	push   %bp
 	mov    %sp,%bp
 	push   %ax
 
-	mov    $vect_global,%ax
-	mov    %ax,2(%bp)  // BP+2 = int_num
-
 	mov    $task_stub,%ax
-	mov    %ax,4(%bp)
-	mov    %cs,6(%bp)
+	mov    %ax,2(%bp)
+	mov    %cs,4(%bp)
 	pushf
 	pop    %ax
-	mov    %ax,8(%bp)
+	mov    %ax,6(%bp)
 
 	pop    %ax
 	pop    %bp
 
-	//jmp    int_hand
-
+	call   int_hand
+	.word  vect_global
 
 // Interrupt common handler
 
 int_hand:
+
+	// Enable interrupt
+
+	sti
 
 	// Save registers on stack
 
@@ -613,7 +585,10 @@ master_back:
 	mov    regs_size+2+0(%si),%ax
 	mov    %ax,reg_ip(%si)
 
-	mov    regs_size+0(%si),%ax  // int_num
+	// Will return the interrupt number to caller
+
+	mov    regs_size+0(%si),%bx  // int_num *
+	mov    %cs:(%bx),%ax
 
 	// Copy slave frame to regs
 
