@@ -5,7 +5,7 @@ CFLAGS = -g -D MON86_HOST
 HOST = mon86-host
 STUB = mon86-stub
 
-.PHONY: all clean
+.PHONY: all clean test
 
 all: $(STUB) $(HOST)
 
@@ -21,3 +21,9 @@ $(HOST): mon86-common.o $(HOST).o
 
 clean:
 	rm -f *.o $(STUB) $(HOST)
+
+test: stub.test
+
+stub.test:
+	./$(STUB) < ../test-mon86-in.txt > test-stub-out.txt
+	diff test-stub-ref.txt test-stub-out.txt

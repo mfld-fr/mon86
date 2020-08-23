@@ -16,7 +16,7 @@ OBJS= \
   mon86-target.o \
   # end of list
 
-.PHONY : all clean
+.PHONY : all clean test
 
 all: $(EXE)
 
@@ -28,3 +28,11 @@ $(EXE): $(OBJS)
 
 clean:
 	rm -f $(EXE) $(OBJS) mon86.map
+
+test: test-emu
+
+test-emu:
+	emu86 -w 0xf0000 -f mon86.bin -x 0xf000:0x0 &
+	sleep 1
+	pcat -t 1000 `cat emu86.pts` < ../test-mon86-in.txt > test-emu-out.txt
+	diff ../test-mon86-ref.txt test-emu-out.txt
