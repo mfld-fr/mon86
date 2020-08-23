@@ -15,7 +15,8 @@
 
 #include <linux/limits.h>
 
-#include "mon86-common.h"
+
+#include "../mon86-common.h"
 
 
 //-----------------------------------------------------------------------------

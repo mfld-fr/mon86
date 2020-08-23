@@ -1,5 +1,4 @@
-#ifndef _MON86_COMMON
-#define _MON86_COMMON
+#pragma once
 
 
 // Constants
@@ -98,6 +97,3 @@ typedef struct context_s context_t;
 
 err_t recv_context (context_t * context);
 err_t send_context (context_t * context);
-
-
-#endif // _MON86_COMMON

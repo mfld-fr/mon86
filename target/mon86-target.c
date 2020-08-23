@@ -1,6 +1,6 @@
 // MON86 - Main program
 
-#include "mon86-common.h"
+#include "../mon86-common.h"
 
 
 // Host stubbing
@@ -249,7 +249,7 @@ static err_t task_sub (globals_t * globals, regs_t * regs)
 
 // Program main
 
-void main ()
+int main ()
 	{
 	err_t err;
 
@@ -378,4 +378,6 @@ void main ()
 
 		if (err == E_END) break;
 		}
+
+	return 0;
 	}

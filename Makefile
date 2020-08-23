@@ -1,25 +1,13 @@
-# Makefile for host stubs and tools
+# Makefile for MON86 project
 
-.PHONY : all
+.PHONY: all clean
 
-all : \
-  mon86-stub \
-  mon86-host \
-  # end of list
+all: host.all target.all
 
-CFLAGS = -g -D HOST_STUB
+clean: host.clean target.clean
 
-# Second stage monitor
+%.all:
+	$(MAKE) -C $* all
 
-mon86-common-host.o : mon86-common.c
-	$(CC) $(CFLAGS) -o $@ -c $<
-
-mon86-stub.o : mon86-target.c
-	$(CC) $(CFLAGS) -o $@ -c $<
-
-mon86-stub : mon86-common-host.o mon86-stub.o
-
-mon86-host : mon86-common-host.o mon86-host.o
-
-clean:
-	-rm *.o mon86-stub mon86-host
+%.clean:
+	$(MAKE) -C $* clean

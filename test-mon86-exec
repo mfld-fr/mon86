@@ -9,5 +9,5 @@ if [ $# != 2 ]
 	then
 	echo "usage: $0 segment offset (hex)"
 	else
-	sudo ./mon86-host -t /dev/ttyUSB0 -s $1 -o $2 -x
+	sudo host/mon86-host -t /dev/ttyUSB0 -s $1 -o $2 -x
 	fi

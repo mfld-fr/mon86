@@ -10,5 +10,5 @@ if [ $# != 3 ]
 	then
 	echo "usage: $0 segment offset count (hex)"
 	else
-	sudo ./mon86-host -t /dev/ttyUSB0 -s $1 -o $2 -l $3 -r | od -A x -t x1z
+	sudo host/mon86-host -t /dev/ttyUSB0 -s $1 -o $2 -l $3 -r | od -A x -t x1z
 	fi

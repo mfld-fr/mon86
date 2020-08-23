@@ -1,6 +1,4 @@
+- Move and specialize stub test
+- Add test target
 - Simplify 'slave_ret' stuff
-- 'slave_exit' to 'slave_ret'
-- Move host part to /host
-- Makefile for /target
-- Simplify interrupt entry with CALL int_hand followed with int_num
-
+- See GitHub issues for other tasks

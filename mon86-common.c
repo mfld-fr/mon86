@@ -319,6 +319,7 @@ err_t send_status (err_t err)
 	return send_string (str, 4);
 	}
 
+#ifdef MON86_HOST
 
 err_t send_context (context_t * context)
 	{
@@ -357,5 +358,6 @@ err_t send_context (context_t * context)
 	return err;
 	}
 
+#endif // MON86_HOST
 
 //-----------------------------------------------------------------------------
