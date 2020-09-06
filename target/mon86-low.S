@@ -19,14 +19,14 @@
 
 #define iret_size    0x6
 
-#define stack_ax     2*0x0
-#define stack_cx     2*0x1
-#define stack_dx     2*0x2
-#define stack_bx     2*0x3
-#define stack_sp     2*0x4
-#define stack_bp     2*0x5
-#define stack_si     2*0x6
-#define stack_di     2*0x7
+#define stack_di     2*0x0
+#define stack_si     2*0x1
+#define stack_bp     2*0x2
+#define stack_sp     2*0x3  // dummy
+#define stack_bx     2*0x4
+#define stack_dx     2*0x5
+#define stack_cx     2*0x6
+#define stack_ax     2*0x7
 #define stack_es     2*0x8
 #define stack_ds     2*0x9
 #define stack_num    2*0xA
@@ -366,6 +366,7 @@ int_hand:
 	push   %ds
 	push   %es
 
+// TODO: replace by CPU_186
 #ifdef MON86_186
 	pusha
 #else
@@ -511,7 +512,7 @@ task_exec:
 	// First registers in PUSHA / POPA order
 
 	push   %si
-	add    $14,%si
+	add    $stack_ax,%si
 	mov    $8,%cx
 1:	std
 	lodsw
@@ -609,7 +610,7 @@ master_back:
 	// First registers in PUSHA / POPA order
 
 	push   %si
-	add    $14,%si
+	add    $stack_ax,%si
 	mov    $8,%cx
 1:	std
 	lodsw
