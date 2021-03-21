@@ -3,9 +3,9 @@
 
 MON86 is yet another monitor for a 8086/8088/80186/80188 based system.
 
-That old 16-bits processor architecture is still used in some devices
-(SBC, SoC, FPGA) that reuse the huge hardware & code legacy from the
-popular PC/XT/AT platform to build embedded systems.
+That old 16 bits processor architecture is still used today in some devices
+(SBC, MCU, SoC, FPGA, etc) that reuse the huge hardware and code base from
+the legacy and popular PC/XT/AT platform to build embedded systems.
 
 The monitor is a tool used on such embedded systems to take control of the
 target just after booting, and before loading / executing a more complex
@@ -37,34 +37,36 @@ Each token is either an immediate value as an hexadecimal number (4 digits max,
 without any prefix nor suffix), or a command with a concatenated prefix letter,
 and a suffix hexadecimal digit.
 
-The commands are ('i' is the register or routine index):
-  A-F   (reserved for immediate value)
-	O   Set the offset
-	S   Set the segment
-	L   Set the length (reserved)
-	R   Read byte from [segment:offset]
-	W   Write byte to [segment:offset]
-	Ji  Get the register (i)
-	Ki  Set the register (i)
-	P   Call the far procedure at [segment:offset]
-	T   Execute the slave task
-    Z   (reserved for status)
+The commands are:
+	A-F  (reserved for immediate value)
+	O    Set the offset
+	S    Set the segment
+	L    Set the length (reserved)
+	R    Read byte from [segment:offset]
+	W    Write byte to [segment:offset]
+	Ji   Get the register (i)
+	Ki   Set the register (i)
+	P    Call the far procedure at [segment:offset]
+	T    Execute the slave task
+	Z    (reserved for status)
 
-  Index  Register
-  0      AX
-  1      CX
-  2      DX
-  3      BX
-  4      SP
-  5      BP
-  6      SI
-  7      DI
-  8      ES
-  9      CS
-  A      SS
-  B      DS
-  C      IP
-  D      FL
+Possible values for the (i) index register:
+
+	0    AX
+	1    CX
+	2    DX
+	3    BX
+	4    SP
+	5    BP
+	6    SI
+	7    DI
+	8    ES
+	9    CS
+	A    SS
+	B    DS
+	C    IP
+	D    FL
+	E-F  (reserved)
 
 A command uses the previous immediate value, which is saved to avoid repeating
 it for the next command.
@@ -72,14 +74,14 @@ it for the next command.
 After each immediate value or command, the monitor writes a status with the same
 format as a command, with the 'Z' prefix:
 
-	Z0  success
-	Z1  end of stream
-	Z2  bad token length
-	Z3  bad token value
-	Z4  bad index
-	Z5  slave interrupted by trace (INT 01h)
-	Z6  slave interrupted by break (INT 03h)
-	Z7  slave returned by RETF or IRET
+	Z0   success
+	Z1   end of stream
+	Z2   bad token length
+	Z3   bad token value
+	Z4   bad index
+	Z5   slave interrupted by trace (INT 01h)
+	Z6   slave interrupted by break (INT 03h)
+	Z7   slave returned by RETF or IRET
 
 Example 1: read 3 bytes from [1234h:5678h] that contains bytes AAh, BBh and CCh:
 '1234 S 5678 O R R R' returns 'Z0 Z0 Z0 Z0 AA Z0 BB Z0 CC Z0'
@@ -91,9 +93,9 @@ Example 3: call far procedure at [1234h:5678h]
 '1234 S 5678 O P' returns 'Z0 Z0 Z0 Z0 Z0'
 
 Example 4: start slave in trace mode at [1000h:0] with data/stack in segment 2000
-'2000 K8 KA KB 1000 K9' : set CS=1000h and DS=ES=SS=2000h
-'0 K4 KC'               : set IP=SP=0
-'100 KD T'              : set TF flag and start slaveMASTER AND SLAVE TASKS
+'2000 K8 KA KB 1000 K9' sets CS=1000h and DS=ES=SS=2000h
+'0 K4 KC'               sets IP=SP=0
+'100 KD T'              sets TF flag and start slaveMASTER AND SLAVE TASKS
 
 
 MASTER AND SLAVE TASKS
@@ -113,33 +115,33 @@ give control back to the master through a simple RETF / IRET.
 
 Stack before SS:SP switch:
 
-  Offset  Register or value
-  00h     AX
-  02h     CX
-  04h     DX
-  06h     BX
-  08h     SP (dummy)
-  0Ah     BP
-  0Ch     SI
-  0Eh     DI
-  10h     ES
-  12h     DS
-  14h     pointer to interrupt number
-  16h     IP slave
-  18h     CS slave
-  1Ah     FL slave
-  1Ch     IP master
-  1Eh     CS master
-  20h     FL master
+	Offset  Register or value
+	00h     AX
+	02h     CX
+	04h     DX
+	06h     BX
+	08h     SP (dummy)
+	0Ah     BP
+	0Ch     SI
+	0Eh     DI
+	10h     ES
+	12h     DS
+	14h     pointer to interrupt number
+	16h     IP slave
+	18h     CS slave
+	1Ah     FL slave
+	1Ch     IP master
+	1Eh     CS master
+	20h     FL master
 
 Remaining of the context data is stored in a static structure pointed by the
 vector [0:3FCh] (INT FFh):
 
-  Offset  Register or value
-  00      magic as NOP IRET to protect against INT FFh
-  02      SP slave
-  04      SS slave
-  06      SP master
-  08      SS master
-  0A      slave run flag
-  0B      slave returned flag
+	Offset  Register or value
+	00      magic as NOP IRET to protect against INT FFh
+	02      SP slave
+	04      SS slave
+	06      SP master
+	08      SS master
+	0A      slave run flag
+	0B      slave returned flag
