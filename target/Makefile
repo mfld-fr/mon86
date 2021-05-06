@@ -32,7 +32,6 @@ clean:
 test: test-emu
 
 test-emu:
-	echo "WARNING: requires local emu86-sys !"
 	../../emu86/emu86 -w 0x80000 -f ../../img/ADVTECH1.BIN -w 0xf8100 -f mon86.bin &
 	sleep 10
 	../../emu86/pcat -t 1000 -d 1 `cat emu86.pts` < ../test-mon86-in.txt > test-emu-out.txt

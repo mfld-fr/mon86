@@ -95,7 +95,7 @@ Example 3: call far procedure at [1234h:5678h]
 Example 4: start slave in trace mode at [1000h:0] with data/stack in segment 2000
 '2000 K8 KA KB 1000 K9' sets CS=1000h and DS=ES=SS=2000h
 '0 K4 KC'               sets IP=SP=0
-'100 KD T'              sets TF flag and start slaveMASTER AND SLAVE TASKS
+'100 KD T'              sets TF flag and start slave
 
 
 MASTER AND SLAVE TASKS
