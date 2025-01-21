@@ -1,5 +1,6 @@
 *** WORK IN PROGRESS ***
 
+WHAT IS THIS ?
 
 MON86 is yet another monitor for a 8086/8088/80186/80188 based system.
 
@@ -26,6 +27,13 @@ Since that protocol only supports basic operations, the monitor could be in
 turn drived from the development system by some utilities, to implement more
 complex and user-friendly commands, like loading and run an executable.
 
+HOW TO BUILD ?
+
+Building MON86 requires an IA16 cross toolchain, that you can build with the
+scripts from the 'build86' project.
+
+After building the toolchain, just create a link to the 'build86/cross' folder,
+then run the './build.sh' script.
 
 SERIAL COMMUNICATION PROTOCOL
 
